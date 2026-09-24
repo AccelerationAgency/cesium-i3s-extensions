@@ -1,6 +1,6 @@
 --- a/packages/engine/Source/Workers/decodeI3S.js
 +++ b/packages/engine/Source/Workers/decodeI3S.js
-@@ -9,6 +9,12 @@
+@@ -12,6 +12,12 @@
  import CesiumMath from "../Core/Math.js";
  import dracoModule from "draco3d/draco_decoder_nodejs.js";
  import srgbToLinear from "../Core/srgbToLinear.js";
@@ -13,7 +13,7 @@
  
  let draco;
  
-@@ -177,24 +183,6 @@
+@@ -180,24 +186,6 @@
        normals[indexOffset1] = rotatedNormal.y;
        normals[indexOffset2] = rotatedNormal.z;
      }
@@ -38,7 +38,7 @@
    }
  }
  
-@@ -552,6 +540,7 @@
+@@ -555,6 +543,7 @@
    normals,
    uv0s,
    colors,
@@ -46,7 +46,7 @@
    featureIndex,
  ) {
    const result = {
-@@ -559,6 +548,7 @@
+@@ -562,6 +551,7 @@
      positions: undefined,
      uv0s: undefined,
      colors: undefined,
@@ -54,7 +54,7 @@
      featureIndex: undefined,
      vertexCount: undefined,
    };
-@@ -582,6 +572,10 @@
+@@ -585,6 +575,10 @@
        : undefined;
      result.featureIndex = defined(featureIndex)
        ? new Array(indices.length)
@@ -65,7 +65,7 @@
        : undefined;
      for (let i = 0; i < indices.length; i++) {
        const index = indices[i];
-@@ -629,6 +623,7 @@
+@@ -632,6 +626,7 @@
    colors,
    featureIndex,
    parameters,
@@ -73,7 +73,7 @@
  ) {
    if (vertexCount === 0 || !defined(positions) || positions.length === 0) {
      return {
-@@ -874,6 +869,34 @@
+@@ -877,6 +872,34 @@
        byteOffset: 0,
        componentType: 5126,
        count: meshColorsInBytes.length / 4,
@@ -108,7 +108,7 @@
        type: "VEC4",
      });
    }
-@@ -1515,6 +1538,17 @@
+@@ -1518,6 +1541,17 @@
      parameters.featureData,
    );
  
@@ -126,7 +126,7 @@
    // Adjust height from orthometric to ellipsoidal
    if (
      defined(parameters.geoidDataList) &&
-@@ -1544,14 +1578,9 @@
+@@ -1547,14 +1581,9 @@
      geometryData.scale_y,
    );
  
@@ -144,7 +144,7 @@
  
    let featureIndex;
    if (defined(geometryData["feature-index"])) {
-@@ -1583,6 +1612,7 @@
+@@ -1586,6 +1615,7 @@
        geometryData.normals,
        geometryData.uv0s,
        geometryData.colors,
@@ -152,7 +152,7 @@
        featureIndex,
      );
      if (defined(data.normals)) {
-@@ -1593,6 +1623,7 @@
+@@ -1596,6 +1626,7 @@
          geometryData.positions = data.positions;
          geometryData.uv0s = data.uv0s;
          geometryData.colors = data.colors;
@@ -160,7 +160,7 @@
          featureIndex = data.featureIndex;
        }
      }
-@@ -1608,6 +1639,7 @@
+@@ -1611,6 +1642,7 @@
      geometryData.colors,
      featureIndex,
      parameters,

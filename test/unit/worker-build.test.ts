@@ -25,7 +25,7 @@ describe('build-worker', () => {
   it('build-worker refuses an unsupported engine version', () => {
     expect(() => execFileSync('node', ['worker/build-worker.mjs', '--out', out], {
       stdio: 'pipe', env: { ...process.env, CESIUM_I3S_ENGINE_VERSION_OVERRIDE: '99.0.0' },
-    })).toThrow(/22\.3\.0/);
+    })).toThrow(/26\.3\.0/);
   });
 
   it('build-worker exits 2 with a usage message when --out has no value', () => {

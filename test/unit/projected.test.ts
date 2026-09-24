@@ -132,7 +132,7 @@ function fakeCesium() {
     _data: unknown;
     constructor(data: unknown) {
       this._data = data;
-      // Mirrors Cesium 1.138: `_computeExtent` runs synchronously from the
+      // Mirrors Cesium 1.145: `_computeExtent` runs synchronously from the
       // constructor, before `load` is ever called.
       this._computeExtent();
     }
@@ -143,7 +143,7 @@ function fakeCesium() {
     async load() {
       calls.layerLoad++;
       const wkid = (this._data as any)?.spatialReference?.wkid;
-      // Mirrors Cesium 1.138's real guard.
+      // Mirrors Cesium 1.145's real guard.
       if (wkid !== 4326) throw new Error(`Unsupported spatial reference: ${wkid}`);
       return 'loaded';
     }
