@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/AccelerationAgency/cesium-i3s-extensions/security/advisories/new
+    about: Please report suspected vulnerabilities privately using GitHub's private vulnerability reporting instead of opening a public issue. See SECURITY.md.

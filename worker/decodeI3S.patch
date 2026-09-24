@@ -1,0 +1,170 @@
+--- a/packages/engine/Source/Workers/decodeI3S.js
++++ b/packages/engine/Source/Workers/decodeI3S.js
+@@ -9,6 +9,12 @@
+ import CesiumMath from "../Core/Math.js";
+ import dracoModule from "draco3d/draco_decoder_nodejs.js";
+ import srgbToLinear from "../Core/srgbToLinear.js";
++// cesium-i3s-extensions: projected layers + atlas uv-region passthrough
++import {
++  projectedScale,
++  expandUvRegions,
++  uvRegionsToFloat,
++} from "cesium-i3s-worker-math";
+ 
+ let draco;
+ 
+@@ -177,24 +183,6 @@
+       normals[indexOffset1] = rotatedNormal.y;
+       normals[indexOffset2] = rotatedNormal.z;
+     }
+-  }
+-}
+-
+-function cropUVs(vertexCount, uv0s, uvRegions) {
+-  for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
+-    const minU = uvRegions[vertexIndex * 4] / 65535.0;
+-    const minV = uvRegions[vertexIndex * 4 + 1] / 65535.0;
+-    const scaleU =
+-      (uvRegions[vertexIndex * 4 + 2] - uvRegions[vertexIndex * 4]) / 65535.0;
+-    const scaleV =
+-      (uvRegions[vertexIndex * 4 + 3] - uvRegions[vertexIndex * 4 + 1]) /
+-      65535.0;
+-
+-    uv0s[vertexIndex * 2] *= scaleU;
+-    uv0s[vertexIndex * 2] += minU;
+-
+-    uv0s[vertexIndex * 2 + 1] *= scaleV;
+-    uv0s[vertexIndex * 2 + 1] += minV;
+   }
+ }
+ 
+@@ -552,6 +540,7 @@
+   normals,
+   uv0s,
+   colors,
++  uvRegions, // cesium-i3s-extensions: de-indexed alongside uv0
+   featureIndex,
+ ) {
+   const result = {
+@@ -559,6 +548,7 @@
+     positions: undefined,
+     uv0s: undefined,
+     colors: undefined,
++    uvRegions: undefined,
+     featureIndex: undefined,
+     vertexCount: undefined,
+   };
+@@ -582,6 +572,10 @@
+       : undefined;
+     result.featureIndex = defined(featureIndex)
+       ? new Array(indices.length)
++      : undefined;
++    // cesium-i3s-extensions: uv-region must follow uv0 through de-indexing
++    result.uvRegions = defined(uvRegions)
++      ? expandUvRegions(uvRegions, indices)
+       : undefined;
+     for (let i = 0; i < indices.length; i++) {
+       const index = indices[i];
+@@ -629,6 +623,7 @@
+   colors,
+   featureIndex,
+   parameters,
++  uvRegions, // cesium-i3s-extensions: atlas uv-region, emitted as _UV_REGION_0
+ ) {
+   if (vertexCount === 0 || !defined(positions) || positions.length === 0) {
+     return {
+@@ -874,6 +869,34 @@
+       byteOffset: 0,
+       componentType: 5126,
+       count: meshColorsInBytes.length / 4,
++      type: "VEC4",
++    });
++  }
++
++  // cesium-i3s-extensions: _UV_REGION_0, atlas region per vertex, consumed by
++  // the atlas CustomShader. Sized to the POSITION accessor: when indices
++  // survive to here, vertexCount is indices.length, not the vertex count.
++  if (defined(uvRegions)) {
++    const meshUvRegions = uvRegionsToFloat(
++      uvRegions,
++      meshPositions.length / 3,
++    );
++    const uvRegionsURL = URL.createObjectURL(
++      new Blob([meshUvRegions], { type: "application/binary" }),
++    );
++    attributes._UV_REGION_0 = accessors.length;
++    buffers.push({ uri: uvRegionsURL, byteLength: meshUvRegions.byteLength });
++    bufferViews.push({
++      buffer: buffers.length - 1,
++      byteOffset: 0,
++      byteLength: meshUvRegions.byteLength,
++      target: 34962,
++    });
++    accessors.push({
++      bufferView: bufferViews.length - 1,
++      byteOffset: 0,
++      componentType: 5126,
++      count: meshUvRegions.length / 4,
+       type: "VEC4",
+     });
+   }
+@@ -1515,6 +1538,17 @@
+     parameters.featureData,
+   );
+ 
++  // cesium-i3s-extensions: projected (Web Mercator) layers carry metre offsets;
++  // fold metres-to-degrees into the per-node scale before any vertex math.
++  const projected = projectedScale(
++    parameters.schema,
++    parameters.cartographicCenter.latitude,
++  );
++  if (defined(projected)) {
++    geometryData.scale_x *= projected.kx;
++    geometryData.scale_y *= projected.ky;
++  }
++
+   // Adjust height from orthometric to ellipsoidal
+   if (
+     defined(parameters.geoidDataList) &&
+@@ -1544,14 +1578,9 @@
+     geometryData.scale_y,
+   );
+ 
+-  // Adjust UVs if there is a UV region
+-  if (defined(geometryData.uv0s) && defined(geometryData["uv-region"])) {
+-    cropUVs(
+-      geometryData.vertexCount,
+-      geometryData.uv0s,
+-      geometryData["uv-region"],
+-    );
+-  }
++  // cesium-i3s-extensions: keep raw uv0 and forward uv-region; the atlas
++  // CustomShader remaps per pixel (replaces the stock cropUVs pass).
++  let uvRegions = geometryData["uv-region"];
+ 
+   let featureIndex;
+   if (defined(geometryData["feature-index"])) {
+@@ -1583,6 +1612,7 @@
+       geometryData.normals,
+       geometryData.uv0s,
+       geometryData.colors,
++      uvRegions, // cesium-i3s-extensions
+       featureIndex,
+     );
+     if (defined(data.normals)) {
+@@ -1593,6 +1623,7 @@
+         geometryData.positions = data.positions;
+         geometryData.uv0s = data.uv0s;
+         geometryData.colors = data.colors;
++        uvRegions = data.uvRegions; // cesium-i3s-extensions
+         featureIndex = data.featureIndex;
+       }
+     }
+@@ -1608,6 +1639,7 @@
+     geometryData.colors,
+     featureIndex,
+     parameters,
++    uvRegions, // cesium-i3s-extensions
+   );
+ 
+   const customAttributes = {

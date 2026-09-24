@@ -1,0 +1,32 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+    ignore:
+      # Pinned exactly — the worker patch is hand-derived against one specific
+      # decodeI3S.js source (see CONTRIBUTING.md § Bumping the Cesium version).
+      - dependency-name: "cesium"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "@cesium/*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # Toolchain majors are migrations, not routine bumps.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vitest"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # esbuild is 0.x: a minor bump can break the worker bundle.
+      - dependency-name: "esbuild"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

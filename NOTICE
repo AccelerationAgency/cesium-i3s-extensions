@@ -1,0 +1,17 @@
+cesium-i3s-extensions
+Copyright 2024-2026 The Acceleration Agency, LLC
+
+This product includes a modified copy of CesiumJS's decodeI3S.js (shipped as
+worker/patched/decodeI3S.js), from CesiumJS (https://github.com/CesiumGS/cesium),
+Copyright 2011-2022 Cesium Contributors, licensed under the Apache License,
+Version 2.0.
+
+The `cesium-i3s-build-worker` CLI (worker/build-worker.mjs) bundles the above
+patched decodeI3S.js against the consumer's own installed @cesium/engine
+(https://github.com/CesiumGS/cesium) sources at build time. The resulting
+decodeI3S.js worker output therefore also includes CesiumJS engine sources,
+Copyright 2011-2022 Cesium Contributors, licensed under the Apache License,
+Version 2.0.
+
+The bundled worker output also includes draco3d (https://github.com/google/draco),
+Copyright Google Inc., licensed under the Apache License, Version 2.0.

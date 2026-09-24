@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Atlas textures on I3S buildings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&display=swap"/>
+<link rel="stylesheet" href="/cesium/Widgets/widgets.css"/>
+<link rel="stylesheet" href="./style.css"/>
+<script>window.CESIUM_BASE_URL = '/cesium';</script>
+</head>
+<body>
+<main id="stage">
+  <div id="v"></div>
+
+  <div id="split" hidden>
+    <div class="split-line"></div>
+    <span class="split-label split-label--left" id="label-left">Stock atlas handling</span>
+    <span class="split-label split-label--right" id="label-right">With the extensions</span>
+    <div class="split-knob" id="knob" tabindex="0" role="slider"
+         aria-label="Comparison split" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"
+         aria-valuetext="50% stock atlas handling, 50% with the extensions">
+      <svg width="20" height="12" viewBox="0 0 20 12" aria-hidden="true"><path d="M6 1 1 6l5 5M14 1l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+  </div>
+
+  <section id="panel" aria-labelledby="panel-title">
+    <h1 id="panel-title">Atlas textures on I3S buildings</h1>
+    <p class="lede" id="lede">Drag the line to compare. Both halves load the same scene layer.</p>
+    <fieldset class="places">
+      <legend class="visually-hidden">Place</legend>
+      <div id="places"></div>
+    </fieldset>
+    <div class="compare">
+      <label for="compare">Compare against</label>
+      <select id="compare">
+        <option value="0" selected>Stock crop</option>
+        <option value="1">Patched worker, no remap</option>
+      </select>
+    </div>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+  </section>
+</main>
+<script type="module" src="./main.ts"></script>
+</body>
+</html>

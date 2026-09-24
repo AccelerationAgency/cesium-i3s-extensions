@@ -1,0 +1,4 @@
+* text=auto eol=lf
+*.png binary
+worker/decodeI3S.patch -diff linguist-generated
+worker/patched/decodeI3S.js linguist-vendored

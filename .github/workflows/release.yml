@@ -1,0 +1,135 @@
+# Requires a repository secret NPM_TOKEN: an npm automation token scoped to
+# the @accelerationagency org, used only by the "Configure npm auth" step
+# below. This workflow does not create that secret or the npm org/scope —
+# see RELEASE.md.
+#
+# Assumes the hosted runner's preinstalled npm is >= 9.5 (the first version
+# with provenance support) — no actions/setup-node "uses:" step is used
+# (org policy: run: steps only), so the "Check npm version" step below
+# verifies this assumption on every run instead.
+name: release
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: skip gh release upload, use npm publish --dry-run"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine dry-run mode
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "dry_run=${{ inputs.dry_run }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "dry_run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout the release ref
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            ref="${{ github.event.release.tag_name }}"
+          else
+            ref="${{ github.ref_name }}"
+          fi
+          echo "ref=$ref" >> "$GITHUB_ENV"
+          git init -q .
+          git fetch -q --depth 1 "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" "$ref"
+          git checkout -q FETCH_HEAD
+
+      - name: Guard — repository must be public
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          visibility="$(gh api "repos/${{ github.repository }}" -q .visibility)"
+          echo "repository visibility: $visibility"
+          if [ "$visibility" != "public" ]; then
+            echo "::error::repository is not public (visibility: $visibility) — refusing to release"
+            exit 1
+          fi
+
+      - name: Guard — package.json must not be private
+        run: |
+          if node -e 'process.exit(require("./package.json").private ? 1 : 0)'; then
+            echo "package.json: not private (ok)"
+          else
+            echo "::error::package.json has \"private\": true — refusing to release"
+            exit 1
+          fi
+
+      - name: Guard — package.json version must match the release tag
+        run: |
+          tag_version="${ref#v}"
+          pkg_version="$(node -e 'console.log(require("./package.json").version)')"
+          echo "tag: $ref (expects version $tag_version), package.json version: $pkg_version"
+          if [ "$tag_version" != "$pkg_version" ]; then
+            echo "::error::package.json version ($pkg_version) does not match tag $ref"
+            exit 1
+          fi
+
+      - run: node --version && npm ci
+
+      - name: Check npm version
+        run: |
+          v="$(npm --version)"
+          major="$(echo "$v" | cut -d. -f1)"
+          minor="$(echo "$v" | cut -d. -f2)"
+          if [ "$major" -lt 9 ] || { [ "$major" -eq 9 ] && [ "$minor" -lt 5 ]; }; then
+            echo "::error::npm $v is older than 9.5 — required for 'npm publish --provenance' without actions/setup-node"
+            exit 1
+          fi
+          echo "npm $v OK (>= 9.5)"
+
+      - run: curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz | tar xz -C /usr/local/bin gitleaks
+
+      - run: npm run typecheck && npm test && npm run sanitize
+        env:
+          SANITIZE_DENYLIST: ${{ secrets.SANITIZE_DENYLIST }}
+
+      - run: npm run build
+
+      - name: Build and verify the patched worker
+        run: |
+          mkdir -p release-assets/Workers
+          npx cesium-i3s-build-worker --out release-assets/Workers
+          npx cesium-i3s-verify-worker release-assets/Workers/decodeI3S.js
+
+      - run: npm pack
+
+      - name: Upload release assets
+        if: steps.mode.outputs.dry_run != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tgz="$(ls ./*.tgz)"
+          gh release upload "$ref" "$tgz" release-assets/Workers/decodeI3S.js --clobber
+
+      - name: Configure npm auth
+        if: steps.mode.outputs.dry_run != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "::error::NPM_TOKEN repository secret is not set — cannot publish (see RELEASE.md)"
+            exit 1
+          fi
+          npm config set //registry.npmjs.org/:_authToken "$NODE_AUTH_TOKEN" --location=user
+
+      - name: Publish to npm
+        run: |
+          if [ "${{ steps.mode.outputs.dry_run }}" = "true" ]; then
+            npm publish --provenance --access public --dry-run
+          else
+            npm publish --provenance --access public
+          fi

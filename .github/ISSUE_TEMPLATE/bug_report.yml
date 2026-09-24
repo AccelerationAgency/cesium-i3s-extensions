@@ -1,0 +1,65 @@
+name: Bug report
+description: Report a problem with cesium-i3s-extensions
+labels: ["bug"]
+body:
+  - type: input
+    id: cesium-version
+    attributes:
+      label: CesiumJS version
+      description: The exact `cesium` (and `@cesium/engine`, if pinned separately) version you're running.
+      placeholder: "1.138.0"
+    validations:
+      required: true
+  - type: input
+    id: package-version
+    attributes:
+      label: cesium-i3s-extensions version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: browser-gpu
+    attributes:
+      label: Browser + GPU
+      description: Browser name/version and GPU/driver (e.g. from chrome://gpu or about:support).
+      placeholder: "Chrome 129, Apple M2 Pro"
+    validations:
+      required: true
+  - type: input
+    id: sceneserver-url
+    attributes:
+      label: SceneServer URL
+      description: >-
+        Only public layers; never paste tokens or private service URLs. If the layer isn't
+        public, describe its shape instead (geometry type, approximate node count, spatial
+        reference wkid).
+      placeholder: "https://.../SceneServer/layers/0"
+    validations:
+      required: false
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps, ideally against the demo or a small repro.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: console-errors
+    attributes:
+      label: Console errors
+      description: Full text of any console errors or warnings, in a code block.
+      render: shell
+    validations:
+      required: false
