@@ -38,13 +38,13 @@ export const DEMO_LAYERS: DemoLayer[] = [
     id: 'boston',
     label: 'Boston, Dot Ave',
     note: 'Tiling facade textures. Stock CesiumJS samples the wrong atlas slot.',
-    caveat: 'Both halves skip this layer’s normal and roughness maps, which CesiumJS 1.138 can’t load.',
+    caveat: 'Both halves skip this layer’s normal and roughness maps, which CesiumJS can’t load.',
     lede: 'Drag the line to compare. Both halves load the same scene layer.',
     url: 'https://tiles.arcgis.com/tiles/cFEFS0EWrhfDeVw9/arcgis/rest/services/Boston_DotAve_CE_Example_WSL1/SceneServer',
     visible: true,
     credit: 'Boston Dot Ave CityEngine example © Esri R&D Center Zurich',
     split: 'split',
-    // Not "Stock CesiumJS": stock 1.138 draws nothing on this layer (see caveat).
+    // Not "Stock CesiumJS": stock CesiumJS draws nothing on this layer (see caveat).
     leftLabel: 'Stock atlas handling',
     view: { heading: 20, pitch: -15, range: 430, target: [-71.0578, 42.3372, 25] },  // the tower cluster on Dorchester Ave
   },

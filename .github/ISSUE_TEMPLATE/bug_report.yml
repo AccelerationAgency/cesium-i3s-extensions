@@ -7,7 +7,7 @@ body:
     attributes:
       label: CesiumJS version
       description: The exact `cesium` (and `@cesium/engine`, if pinned separately) version you're running.
-      placeholder: "1.138.0"
+      placeholder: "1.145.0"
     validations:
       required: true
   - type: input

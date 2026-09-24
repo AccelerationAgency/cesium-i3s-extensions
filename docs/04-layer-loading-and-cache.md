@@ -54,6 +54,7 @@ The plain conclusion: `cacheBytes` and screen-space-error knobs tune *how a sing
 
 ## Limits
 
+- The measurements in this doc were taken on CesiumJS 1.138 and have not been re-run on 1.145.
 - `i3sTilesetDefaults`'s numbers were measured against building-scale I3S layers (tens to low hundreds of nodes, individual buildings and small clusters). They are a documented starting point, not a universal answer — re-measure before assuming they hold for a very large layer (city-scale, thousands of nodes) or a non-building I3S layer (terrain, meshes), where the I3S team's own defaults may already be closer to correct.
 - `createVisibilityLoader` holds one `handle` per layer in memory for the life of the loader (until `remove(id)` is called); it does not itself evict a *loaded* layer's GPU memory when hidden — that's the caller's `setShown` to implement, if wanted (the demo's `unloadPlace` in `demo/main.ts` shows one way, destroying and reloading a whole place rather than hiding it, because it holds more than one layer resident at once).
 - Status tracking is per layer id, not per node or per tile — it answers "is this layer usable yet," not "how much of this layer has streamed in."

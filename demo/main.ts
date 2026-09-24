@@ -149,7 +149,7 @@ interface I3SMaterialDef {
 }
 
 /**
- * Demo-only workaround, not part of the library. CesiumJS 1.138 copies an I3S
+ * Demo-only workaround, not part of the library. CesiumJS (1.138 through 1.145) copies an I3S
  * materialDefinition straight into the glTF it builds, but only creates a glTF
  * texture for the base colour. A layer whose materials also reference a normal
  * or metallic-roughness texture set (the Boston layer does) then fails every

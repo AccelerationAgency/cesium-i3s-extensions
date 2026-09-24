@@ -41,11 +41,12 @@ This runs `worker/make-patch.mjs`, which diffs your installed `node_modules/@ces
 
 This package pins `cesium` and `@cesium/engine` to exact versions (see `README.md` § Compatibility) because the worker patch is hand-derived against one specific `decodeI3S.js` source, not maintained as an abstract diff that applies cleanly to any version. Bumping the supported Cesium version is not a version-number change; it requires:
 
-1. Installing the new `cesium` / `@cesium/engine` locally and diffing the new `Source/Workers/decodeI3S.js` against the version this package currently patches.
+1. Setting `cesium` (devDependency and peerDependency) to the new exact version and the `@cesium/widgets` entry in `overrides` to the exact widgets version that `cesium` release declares, then reinstalling and confirming `npm ls @cesium/engine` shows a single copy. Then installing the new `cesium` / `@cesium/engine` locally and diffing the new `Source/Workers/decodeI3S.js` against the version this package currently patches.
 2. Re-deriving `worker/patched/decodeI3S.js` from the new stock source — reapplying the same logical changes (Web Mercator scale folding, `_UV_REGION_0` emission, the de-indexing fix — see `docs/01-web-mercator-i3s.md` and `docs/02-atlas-uv.md`) to whatever the new source looks like, not a mechanical patch-apply.
 3. Updating `worker/base.json` (`engine`, `cesium`, `sha256` of the new stock `decodeI3S.js`) — `cesium-i3s-build-worker` refuses to run against a version/hash that doesn't match this file, by design.
 4. Regenerating `worker/decodeI3S.patch` (`npm run worker:diff`).
-5. Re-running the full test suite and the demo against real scene layers before merging — the worker patch has no automated coverage for whether it still matches the new engine's internal call shape beyond what `test/unit/worker-build.test.ts` and `cesium-i3s-verify-worker`'s marker check catch.
+5. Updating every version mention: `README.md` (install line, compatibility table, duplicate-engine note), `CHANGELOG.md`, `docs/`, the bug-report template, and test expectations that name the engine version (`test/unit/worker-build.test.ts`). Line references into Cesium sources in `docs/` and `src/` comments must be re-checked against the new engine.
+6. Re-running the full test suite and the demo against real scene layers before merging — the worker patch has no automated coverage for whether it still matches the new engine's internal call shape beyond what `test/unit/worker-build.test.ts` and `cesium-i3s-verify-worker`'s marker check catch.
 
 ## Code layout
 

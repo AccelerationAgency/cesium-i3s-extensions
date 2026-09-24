@@ -4,7 +4,8 @@
 
 ### Added
 
-- Web Mercator I3S scene-layer support: load a `wkid` 102100/3857/102113/900913 scene layer that stock CesiumJS 1.138 refuses with `Unsupported spatial reference`. See `docs/01-web-mercator-i3s.md`.
+- Supports CesiumJS 1.145.0 (`@cesium/engine` 26.3.0), pinned exactly. The worker patch is derived from that engine's stock `decodeI3S.js`; development and the demo screenshots started on 1.138.0.
+- Web Mercator I3S scene-layer support: load a `wkid` 102100/3857/102113/900913 scene layer that stock CesiumJS 1.145 refuses with `Unsupported spatial reference`. See `docs/01-web-mercator-i3s.md`.
 - Atlas UV remap: per-pixel remap of tiling atlas facade UVs into their region, replacing the stock per-vertex crop. See `docs/02-atlas-uv.md`.
 - Gradient-correct mip selection for atlas-remapped textures, avoiding both tile-boundary seams and moiré on minified surfaces. See `docs/03-mip-shimmer.md`.
 - Measured I3S tileset defaults and a visibility-driven layer loader that only loads layers actually shown. See `docs/04-layer-loading-and-cache.md`.
@@ -21,5 +22,5 @@
 ### Known issues
 
 - Building Scene Layer extent: `I3SDataProvider` pushes `fullExtent` directly into `provider._layersExtent` for this path rather than going through `I3SLayer._computeExtent`, so the extent-reprojection fix does not run for it.
-- The Boston demo layer's normal-map and metallic-roughness textures fail to load at all under stock CesiumJS 1.138 (every tile errors in `GltfLoader`), unrelated to anything this package changes; the demo drops both texture references before rendering, on both halves of the comparison.
-- Duplicate-engine override needed for `cesium@1.138.0` consumers: `cesium`'s own `package.json` declares a `^14.3.0` range for `@cesium/widgets` that npm can resolve to a version depending on `@cesium/engine@24`, producing two copies of `@cesium/engine` in `node_modules` and a silently blank `Viewer`. Add the `@cesium/widgets: 14.3.0` override/resolution to your own project — this package's own `overrides` field only protects installs inside this repo. See `README.md` § Compatibility.
+- The Boston demo layer's normal-map and metallic-roughness textures fail to load at all under stock CesiumJS 1.145 (as under 1.138; every tile errors in `GltfLoader`), unrelated to anything this package changes; the demo drops both texture references before rendering, on both halves of the comparison.
+- Duplicate-engine override recommended for `cesium@1.145.0` consumers: `cesium`'s own `package.json` declares a `^16.2.0` range for `@cesium/widgets`, which a future widgets release built on a newer `@cesium/engine` major would also satisfy, producing two copies of `@cesium/engine` in `node_modules` and a silently blank `Viewer`. Add the `@cesium/widgets: 16.2.0` override/resolution to your own project — this package's own `overrides` field only protects installs inside this repo. See `README.md` § Compatibility.

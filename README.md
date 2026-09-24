@@ -4,7 +4,7 @@ Fixes for [CesiumJS](https://cesium.com/platform/cesiumjs/)'s I3S scene-layer su
 
 ![Swipe comparison on a Boston scene layer: stock CesiumJS atlas handling on the left, this package on the right](docs/img/demo-split.png)
 
-*Same scene layer, same CesiumJS 1.138 build. Left: stock atlas handling samples neighbouring atlas slots. Right: with this package.*
+*Same scene layer, same CesiumJS build (captured on 1.138; 1.145 renders the same). Left: stock atlas handling samples neighbouring atlas slots. Right: with this package.*
 
 ## What it fixes
 
@@ -18,7 +18,7 @@ Developed by The Acceleration Agency while building ProjectGemini, a web digital
 ## Install
 
 ```sh
-npm install @accelerationagency/cesium-i3s-extensions cesium@1.138.0
+npm install @accelerationagency/cesium-i3s-extensions cesium@1.145.0
 ```
 
 `cesium` is a peer dependency — install it yourself at the pinned version. The library itself (`src/`) has zero runtime dependencies; the `cesium-i3s-build-worker` CLI depends on `esbuild`.
@@ -87,25 +87,25 @@ npx cesium-i3s-verify-worker <path-to-served-decodeI3S.js>
 
 | This package | cesium | @cesium/engine |
 |---|---|---|
-| 0.1.x | `1.138.0` exactly | `22.3.0` exactly |
+| 0.1.x | `1.145.0` exactly | `26.3.0` exactly |
 
 Both pins are exact, not ranges. The worker build (`cesium-i3s-build-worker`, above) checks your installed `@cesium/engine` version and the sha256 of its stock `decodeI3S.js` against `worker/base.json` and refuses to run against anything else — a Cesium upgrade needs a new patch (see `CONTRIBUTING.md`), not a version bump in your lockfile.
 
-**Duplicate-engine trap:** `cesium@1.138.0`'s own `package.json` declares `@cesium/widgets: ^14.3.0`. npm is free to resolve that range to `14.5.x`, which depends on `@cesium/engine@24`. Your project then ends up with two copies of `@cesium/engine` in `node_modules` — the one `cesium` re-exports (22.3.x) and the one `@cesium/widgets` pulls in (24.x) — and `Cesium.Viewer` silently renders nothing (`maxTextureSize` comes back `0`, `Model` picks up the wrong `FrameState` prototype, etc.). This package's own `overrides` field only protects `npm install` runs *inside this repo*; it does nothing for your project. Add the same override to your own `package.json`:
+**Duplicate-engine trap:** `cesium@1.145.0`'s own `package.json` declares `@cesium/widgets` as a caret range (`^16.2.0`), not an exact version. Today that resolves to a widgets release built on `@cesium/engine@26.3.0`, but any future `@cesium/widgets` minor that moves to a newer engine major also satisfies the range. When npm picks one up, your project ends up with two copies of `@cesium/engine` in `node_modules` — the one `cesium` re-exports (26.3.x) and the one `@cesium/widgets` pulls in — and `Cesium.Viewer` silently renders nothing (`maxTextureSize` comes back `0`, `Model` picks up the wrong `FrameState` prototype, etc.). Pinning `@cesium/widgets` to the exact version `cesium@1.145.0` ships with closes that door. This package's own `overrides` field only protects `npm install` runs *inside this repo*; it does nothing for your project. Add the same override to your own `package.json`:
 
 ```json
 {
   "overrides": {
-    "@cesium/widgets": "14.3.0"
+    "@cesium/widgets": "16.2.0"
   }
 }
 ```
 
-(Yarn/pnpm: the equivalent `resolutions` / `pnpm.overrides` entry.)
+(Yarn/pnpm: the equivalent `resolutions` / `pnpm.overrides` entry.) Check with `npm ls @cesium/engine`: it should list a single `26.3.0`, deduped under `@cesium/widgets`.
 
 ## Before / after
 
-Boston Dot Ave CityEngine example, both rendered by the same CesiumJS 1.138 build:
+Boston Dot Ave CityEngine example, both rendered by the same CesiumJS build (captured on 1.138; re-checked on 1.145, which renders the same):
 
 ![Stock CesiumJS: atlas texture bleed and misaligned facade tiling on the Dot Ave towers](docs/img/atlas-before.png)
 
@@ -113,7 +113,7 @@ Boston Dot Ave CityEngine example, both rendered by the same CesiumJS 1.138 buil
 
 ## Known issues
 
-Stock CesiumJS 1.138 fails to load the Boston demo layer's normal-map and metallic-roughness textures at all (every tile errors in `GltfLoader` and nothing draws, with or without this package). The demo works around it by dropping both texture references before rendering, on both halves of the comparison. This package does not fix that failure — it is unrelated to atlas UVs or projected layers.
+Stock CesiumJS (1.138, and still 1.145) fails to load the Boston demo layer's normal-map and metallic-roughness textures at all (every tile errors in `GltfLoader` and nothing draws, with or without this package). The demo works around it by dropping both texture references before rendering, on both halves of the comparison. This package does not fix that failure — it is unrelated to atlas UVs or projected layers.
 
 ## Demo
 

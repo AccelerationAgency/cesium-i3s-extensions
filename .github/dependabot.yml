@@ -10,6 +10,8 @@ updates:
     ignore:
       # Pinned exactly — the worker patch is hand-derived against one specific
       # decodeI3S.js source (see CONTRIBUTING.md § Bumping the Cesium version).
+      # @cesium/widgets is also pinned via package.json `overrides` (16.2.0, the
+      # version cesium 1.145.0 ships with); move it together with cesium.
       - dependency-name: "cesium"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
       - dependency-name: "@cesium/*"

@@ -12,7 +12,7 @@ The layer never draws. There is no partial or degraded result — `I3SLayer.load
 
 ## Cause
 
-CesiumJS's I3S pipeline assumes WGS84 degree offsets end to end, with no projection step anywhere in it. Five places in `@cesium/engine` 22.3.0 depend on that assumption:
+CesiumJS's I3S pipeline assumes WGS84 degree offsets end to end, with no projection step anywhere in it. Five places in `@cesium/engine` 26.3.0 depend on that assumption:
 
 1. **`I3SLayer.prototype.load`** (`I3SLayer.js:180-183`) — the guard itself: throws unless `this._data.spatialReference.wkid === 4326`.
 2. **`I3SLayer.prototype._computeExtent`** (`I3SLayer.js:371`) — called synchronously from the `I3SLayer` constructor (`I3SLayer.js:65`), i.e. before `load` ever runs. `I3SDataProvider.fromUrl` unions every layer's resulting `_extent` into `provider._extent` (`I3SDataProvider.js:469-476`, `798-812`) and calls `provider._computeExtent()` (`I3SDataProvider.js:563`) *before* calling `load` on any layer (`I3SDataProvider.js:566-573`). A fix applied only inside `load` is one step too late for the provider's own `extent` property.
