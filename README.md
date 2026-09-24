@@ -1,28 +1,19 @@
 # cesium-i3s-extensions
 
-`@accelerationagency/cesium-i3s-extensions` is a set of runtime patches for [CesiumJS](https://cesium.com/platform/cesiumjs/)'s I3S support: it lets `I3SDataProvider` load Web Mercator scene layers that Cesium 1.138 rejects outright, fixes atlas-texture sampling on layers that use tiling facade UVs, and adds measured tileset defaults plus a loader that only fetches layers a scene is actually showing. Nothing here edits Cesium's own source; each fix is applied at runtime against a Cesium namespace you already import, plus one replacement worker file you build and serve yourself.
+Fixes for [CesiumJS](https://cesium.com/platform/cesiumjs/)'s I3S scene-layer support: load Web Mercator scene layers that Cesium rejects, sample atlas facade textures correctly, and load only the layers a scene is showing.
 
-Developed by The Acceleration Agency while building ProjectGemini, a web digital-twin platform on CesiumJS.
+![Swipe comparison on a Boston scene layer: stock CesiumJS atlas handling on the left, this package on the right](docs/img/demo-split.png)
 
-## Compatibility
+*Same scene layer, same CesiumJS 1.138 build. Left: stock atlas handling samples neighbouring atlas slots. Right: with this package.*
 
-| This package | cesium | @cesium/engine |
-|---|---|---|
-| 0.1.x | `1.138.0` exactly | `22.3.0` exactly |
+## What it fixes
 
-Both pins are exact, not ranges. The worker build (`cesium-i3s-build-worker`, below) checks your installed `@cesium/engine` version and the sha256 of its stock `decodeI3S.js` against `worker/base.json` and refuses to run against anything else — a Cesium upgrade needs a new patch (see `CONTRIBUTING.md`), not a version bump in your lockfile.
+1. **[Web Mercator scene layers](docs/01-web-mercator-i3s.md).** Loads `wkid` 102100/3857 layers that stock CesiumJS refuses with `Unsupported spatial reference`, without republishing the service.
+2. **[Atlas texture sampling](docs/02-atlas-uv.md).** Remaps tiling facade UVs into their atlas region per pixel, so facades stop picking up their neighbours' textures.
+3. **[No seams or shimmer](docs/03-mip-shimmer.md).** Chooses mip levels from the true texture footprint, avoiding both seams at tile edges and moiré on large flat roofs.
+4. **[Load only what's shown](docs/04-layer-loading-and-cache.md).** Measured tileset defaults, and a loader that fetches a layer the first time it's made visible.
 
-**Duplicate-engine trap:** `cesium@1.138.0`'s own `package.json` declares `@cesium/widgets: ^14.3.0`. npm is free to resolve that range to `14.5.x`, which depends on `@cesium/engine@24`. Your project then ends up with two copies of `@cesium/engine` in `node_modules` — the one `cesium` re-exports (22.3.x) and the one `@cesium/widgets` pulls in (24.x) — and `Cesium.Viewer` silently renders nothing (`maxTextureSize` comes back `0`, `Model` picks up the wrong `FrameState` prototype, etc.). This package's own `overrides` field only protects `npm install` runs *inside this repo*; it does nothing for your project. Add the same override to your own `package.json`:
-
-```json
-{
-  "overrides": {
-    "@cesium/widgets": "14.3.0"
-  }
-}
-```
-
-(Yarn/pnpm: the equivalent `resolutions` / `pnpm.overrides` entry.)
+Developed by The Acceleration Agency while building ProjectGemini, a web digital-twin platform on CesiumJS. The fixes are applied at runtime to the Cesium you already import, plus one replacement worker file you build and serve; no Cesium fork is needed.
 
 ## Install
 
@@ -31,6 +22,8 @@ npm install @accelerationagency/cesium-i3s-extensions cesium@1.138.0
 ```
 
 `cesium` is a peer dependency — install it yourself at the pinned version. The library itself (`src/`) has zero runtime dependencies; the `cesium-i3s-build-worker` CLI depends on `esbuild`.
+
+Also add the one-line `overrides` entry from [Compatibility](#compatibility) to your own `package.json`. Without it npm can install a second copy of Cesium's engine and the viewer renders nothing.
 
 ## Quick start
 
@@ -90,12 +83,25 @@ npx cesium-i3s-verify-worker <path-to-served-decodeI3S.js>
 
 `cesium-i3s-verify-worker` checks for three markers (the patch banner, the `_UV_REGION_0` attribute emission, the `__projectedWkid` marker read) and exits non-zero if the served file is missing any of them — catching a build step that silently fell back to Cesium's own unpatched worker copy.
 
-## The four enhancements
+## Compatibility
 
-1. [Web Mercator I3S scene layers](docs/01-web-mercator-i3s.md) — load a `wkid` 102100/3857/102113/900913 scene layer that stock CesiumJS 1.138 refuses with `Unsupported spatial reference`, without republishing the service in WGS84.
-2. [Atlas UV remap](docs/02-atlas-uv.md) — per-pixel remap of tiling atlas facade UVs into their region, on layers whose per-face UVs run outside `[0,1]`.
-3. [Gradient-correct mip selection](docs/03-mip-shimmer.md) — `textureGrad` with derivatives rescaled into atlas space, avoiding both the seams a naive `fract()`-derived mip produces and the moiré of pinning mip 0.
-4. [Layer loading and cache tuning](docs/04-layer-loading-and-cache.md) — measured `Cesium3DTileset` defaults for I3S buildings, and a loader that fetches a layer only once it's actually shown.
+| This package | cesium | @cesium/engine |
+|---|---|---|
+| 0.1.x | `1.138.0` exactly | `22.3.0` exactly |
+
+Both pins are exact, not ranges. The worker build (`cesium-i3s-build-worker`, above) checks your installed `@cesium/engine` version and the sha256 of its stock `decodeI3S.js` against `worker/base.json` and refuses to run against anything else — a Cesium upgrade needs a new patch (see `CONTRIBUTING.md`), not a version bump in your lockfile.
+
+**Duplicate-engine trap:** `cesium@1.138.0`'s own `package.json` declares `@cesium/widgets: ^14.3.0`. npm is free to resolve that range to `14.5.x`, which depends on `@cesium/engine@24`. Your project then ends up with two copies of `@cesium/engine` in `node_modules` — the one `cesium` re-exports (22.3.x) and the one `@cesium/widgets` pulls in (24.x) — and `Cesium.Viewer` silently renders nothing (`maxTextureSize` comes back `0`, `Model` picks up the wrong `FrameState` prototype, etc.). This package's own `overrides` field only protects `npm install` runs *inside this repo*; it does nothing for your project. Add the same override to your own `package.json`:
+
+```json
+{
+  "overrides": {
+    "@cesium/widgets": "14.3.0"
+  }
+}
+```
+
+(Yarn/pnpm: the equivalent `resolutions` / `pnpm.overrides` entry.)
 
 ## Before / after
 
@@ -104,10 +110,6 @@ Boston Dot Ave CityEngine example, both rendered by the same CesiumJS 1.138 buil
 ![Stock CesiumJS: atlas texture bleed and misaligned facade tiling on the Dot Ave towers](docs/img/atlas-before.png)
 
 ![With the atlas UV fix applied: continuous facade texture, no cross-region bleed](docs/img/atlas-after.png)
-
-The demo's swipe comparison, stock handling on the left and this package's fix on the right:
-
-![Swipe comparison of the Boston layer, stock atlas handling on the left and the fix on the right](docs/img/demo-split.png)
 
 ## Known issues
 
