@@ -26,6 +26,11 @@ export interface DemoLayer {
   /** Left-half label while this place is shown. */
   leftLabel: string;
   /**
+   * Overrides `i3sTilesetDefaults.maximumScreenSpaceError` for this place.
+   * Set it when the default asks for more geometry than `cacheBytes` can hold.
+   */
+  screenSpaceError?: number;
+  /**
    * Oblique framing, heading and pitch in degrees. With `target` (lon, lat,
    * ellipsoid height) the camera looks at that point from `range` metres;
    * without it, at the layer's bounding sphere from `range` x its radius.
@@ -46,6 +51,11 @@ export const DEMO_LAYERS: DemoLayer[] = [
     split: 'split',
     // Not "Stock CesiumJS": stock CesiumJS draws nothing on this layer (see caveat).
     leftLabel: 'Stock atlas handling',
+    // The library default of 8 does not fit this close view. On a 1440×757
+    // canvas, SSE 8 and 48 both fill the 768 MB cache; Cesium then raises
+    // memoryAdjustedScreenSpaceError and oscillates it, and the second copy
+    // pushes the tab over the edge. SSE 64 holds a steady 581 MB per copy.
+    screenSpaceError: 64,
     view: { heading: 20, pitch: -15, range: 430, target: [-71.0578, 42.3372, 25] },  // the tower cluster on Dorchester Ave
   },
   {

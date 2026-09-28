@@ -169,7 +169,12 @@ function dropUnsupportedMaterialTextures(p: Cesium.I3SDataProvider): void {
 }
 
 async function loadProvider(l: DemoLayer, shader: Cesium.CustomShader, side: Cesium.SplitDirection) {
-  const p = await Cesium.I3SDataProvider.fromUrl(l.url, { cesium3dTilesetOptions: { ...i3sTilesetDefaults } });
+  const p = await Cesium.I3SDataProvider.fromUrl(l.url, {
+    cesium3dTilesetOptions: {
+      ...i3sTilesetDefaults,
+      ...(l.screenSpaceError !== undefined ? { maximumScreenSpaceError: l.screenSpaceError } : {}),
+    },
+  });
   dropUnsupportedMaterialTextures(p);
   attachAtlasShader(p, shader);
   for (const t of tilesetsOf(p)) t.splitDirection = side;
@@ -212,8 +217,8 @@ async function loadPlaceProviders(l: DemoLayer): Promise<Cesium.I3SDataProvider[
 
 /**
  * Only one place is shown at a time, so a hidden place is destroyed rather than
- * kept: Boston alone holds over 1 GB of geometry per copy, and keeping every
- * visited place resident ran the tab out of memory. show() reloads it on return.
+ * kept. Boston is loaded twice, and keeping every visited place resident ran
+ * the tab out of memory. show() reloads it on return.
  */
 function unloadPlace(place: Place): void {
   for (const p of place.providers) viewer.scene.primitives.remove(p);   // the collection destroys it
